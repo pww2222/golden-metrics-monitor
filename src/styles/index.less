@@ -1,0 +1,116 @@
+@import './variables.less';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  font-family: @font-family;
+  font-size: 14px;
+  color: @text-color;
+  background: @page-bg;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Ant Design overrides
+.ant-btn-primary {
+  background: @primary-btn-bg !important;
+  border-color: @primary-btn-bg !important;
+  border-radius: @btn-radius;
+
+  &:hover {
+    background: @primary-hover !important;
+    border-color: @primary-hover !important;
+  }
+  &:active {
+    background: @primary-active !important;
+    border-color: @primary-active !important;
+  }
+}
+
+.ant-btn-default {
+  border-radius: @btn-radius;
+}
+
+.ant-btn {
+  border-radius: @btn-radius;
+}
+
+.ant-modal-content {
+  border-radius: @modal-radius;
+}
+
+.ant-modal-header {
+  border-bottom: none;
+}
+
+.ant-drawer-content {
+  border-radius: @card-radius 0 0 @card-radius;
+}
+
+// Table header style
+.ant-table-thead > tr > th {
+  background: @table-header-bg !important;
+  font-weight: 600 !important;
+  color: @text-color !important;
+  text-align: center !important;
+}
+
+.ant-table-tbody > tr > td {
+  text-align: center !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: @row-hover-bg !important;
+}
+
+.ant-pagination {
+  justify-content: flex-end;
+}
+
+// Form layout: label left, control right
+.ant-form-item-label {
+  text-align: right;
+}
+
+// Input
+.ant-input,
+.ant-select-selector,
+.ant-picker {
+  border-radius: @btn-radius !important;
+}
+
+// Card
+.ant-card {
+  border-radius: @card-radius;
+  box-shadow: @shadow-1;
+}
+
+// Alarm severity colors
+.severity-1 { color: @alarm-1; }
+.severity-2 { color: @alarm-2; }
+.severity-3 { color: @alarm-3; }
+.severity-4 { color: @alarm-4; }
+
+.severity-badge-1 { background: @alarm-1; }
+.severity-badge-2 { background: @alarm-2; }
+.severity-badge-3 { background: @alarm-3; }
+.severity-badge-4 { background: @alarm-4; }
+
+// Scrollbar
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

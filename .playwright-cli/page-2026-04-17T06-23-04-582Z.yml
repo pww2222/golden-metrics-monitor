@@ -1,0 +1,28 @@
+- generic [ref=e39]:
+  - banner [ref=e40]:
+    - generic [ref=e41]:
+      - generic [ref=e42]: 📊
+      - generic [ref=e43]: 黄金指标分析系统
+    - navigation [ref=e44]:
+      - generic [ref=e45] [cursor=pointer]: 规则配置
+      - generic [ref=e46] [cursor=pointer]: 指标报表
+      - generic [ref=e47] [cursor=pointer]: 监控报表
+    - generic [ref=e48]:
+      - generic [ref=e49]:
+        - img "bell" [ref=e50] [cursor=pointer]:
+          - img [ref=e51]
+        - superscript [ref=e53]:
+          - paragraph [ref=e55]: "9"
+      - generic [ref=e56] [cursor=pointer]:
+        - generic [ref=e58]: 管
+        - generic [ref=e59]: 管理员
+  - generic [ref=e60]:
+    - generic [ref=e61] [cursor=pointer]:
+      - generic [ref=e62]: 规则配置
+      - img "close" [ref=e63]:
+        - img [ref=e64]
+    - generic [ref=e418] [cursor=pointer]:
+      - generic [ref=e419]: 指标报表
+      - img "close" [ref=e420]:
+        - img [ref=e421]
+  - main [ref=e66]

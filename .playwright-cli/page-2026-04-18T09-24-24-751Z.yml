@@ -1,0 +1,331 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e39]:
+    - banner [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]: 📊
+        - generic [ref=e43]: 黄金指标分析系统
+      - navigation [ref=e44]:
+        - generic [ref=e45] [cursor=pointer]: 规则配置
+        - generic [ref=e46] [cursor=pointer]: 指标报表
+        - generic [ref=e47] [cursor=pointer]: 监控报表
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - img "bell" [ref=e50] [cursor=pointer]:
+            - img [ref=e51]
+          - superscript [ref=e53]:
+            - paragraph [ref=e55]: "9"
+        - generic [ref=e56] [cursor=pointer]:
+          - generic [ref=e58]: 管
+          - generic [ref=e59]: 管理员
+    - generic [ref=e61] [cursor=pointer]:
+      - generic [ref=e62]: 规则配置
+      - img "close" [ref=e63]:
+        - img [ref=e64]
+    - main [ref=e66]:
+      - generic [ref=e67]:
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - generic [ref=e74]:
+              - generic "网元类型" [ref=e76]: "网元类型 :"
+              - generic [ref=e80] [cursor=pointer]:
+                - generic [ref=e81]:
+                  - combobox [ref=e83]
+                  - generic: 请选择
+                - generic:
+                  - img:
+                    - img
+            - generic [ref=e86]:
+              - generic "规则状态" [ref=e88]: "规则状态 :"
+              - generic [ref=e92] [cursor=pointer]:
+                - generic [ref=e93]:
+                  - combobox [ref=e95]
+                  - generic: 全部
+                - generic:
+                  - img:
+                    - img
+            - generic [ref=e98]:
+              - generic "规则名称" [ref=e100]: "规则名称 :"
+              - textbox "搜索规则名称" [ref=e105]
+            - generic [ref=e109]:
+              - generic "应用场景" [ref=e111]: "应用场景 :"
+              - generic [ref=e116]:
+                - combobox [ref=e120]
+                - generic: 全部
+          - generic [ref=e122]:
+            - button "查 询" [ref=e123] [cursor=pointer]:
+              - generic [ref=e124]: 查 询
+            - button "重 置" [ref=e125] [cursor=pointer]:
+              - generic [ref=e126]: 重 置
+        - generic [ref=e128]:
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - button "批量启用" [disabled] [ref=e131]:
+                - generic [ref=e132]: 批量启用
+              - button "批量停用" [disabled] [ref=e133]:
+                - generic [ref=e134]: 批量停用
+              - button "批量删除" [disabled] [ref=e135]:
+                - generic [ref=e136]: 批量删除
+            - generic [ref=e137]:
+              - button "自定义创建" [ref=e138] [cursor=pointer]:
+                - generic [ref=e139]: 自定义创建
+              - button "📋 从模板创建" [ref=e140] [cursor=pointer]:
+                - generic [ref=e141]: 📋 从模板创建
+          - generic [ref=e144]:
+            - table [ref=e148]:
+              - rowgroup [ref=e160]:
+                - row "Select all 规则名称 网元类型 应用场景 条件 等级 触发窗口 状态 更新时间 操作" [ref=e161]:
+                  - columnheader "Select all" [ref=e162]:
+                    - checkbox "Select all" [ref=e166] [cursor=pointer]
+                  - columnheader "规则名称" [ref=e168]
+                  - columnheader "网元类型" [ref=e169]
+                  - columnheader "应用场景" [ref=e170]
+                  - columnheader "条件" [ref=e171]
+                  - columnheader "等级" [ref=e172]
+                  - columnheader "触发窗口" [ref=e173]
+                  - columnheader "状态" [ref=e174]
+                  - columnheader "更新时间" [ref=e175]
+                  - columnheader "操作" [ref=e176]
+              - rowgroup [ref=e177]:
+                - row "AMF注册成功率异常监控 AMF 故障派单 业务受损监控 注册成功率 环比 lt-20% 2级-严重 3点 启用 2026-04-16 09:15:00 编辑 删除" [ref=e178]:
+                  - cell [ref=e179]:
+                    - checkbox [ref=e182] [cursor=pointer]
+                  - cell "AMF注册成功率异常监控" [ref=e184]
+                  - cell "AMF" [ref=e185]
+                  - cell "故障派单 业务受损监控" [ref=e186]:
+                    - generic [ref=e187]: 故障派单
+                    - generic [ref=e188]: 业务受损监控
+                  - cell "注册成功率 环比 lt-20%" [ref=e189]:
+                    - generic [ref=e190]: 注册成功率 环比 lt-20%
+                  - cell "2级-严重" [ref=e191]:
+                    - generic [ref=e192]: 2级-严重
+                  - cell "3点" [ref=e193]
+                  - cell "启用" [ref=e194]:
+                    - generic [ref=e195]: 启用
+                  - cell "2026-04-16 09:15:00" [ref=e197]
+                  - cell "编辑 删除" [ref=e198]:
+                    - button "编辑" [ref=e199] [cursor=pointer]:
+                      - generic [ref=e200]: 编辑
+                    - separator [ref=e201]
+                    - button "删除" [ref=e202] [cursor=pointer]:
+                      - generic [ref=e203]: 删除
+                - row "AMF会话建立率监控 AMF 故障派单 会话建立率 绝对值 lt95% 1级-紧急 3点 启用 2026-04-15 16:20:00 编辑 删除" [ref=e204]:
+                  - cell [ref=e205]:
+                    - checkbox [ref=e208] [cursor=pointer]
+                  - cell "AMF会话建立率监控" [ref=e210]
+                  - cell "AMF" [ref=e211]
+                  - cell "故障派单" [ref=e212]:
+                    - generic [ref=e213]: 故障派单
+                  - cell "会话建立率 绝对值 lt95%" [ref=e214]:
+                    - generic [ref=e215]: 会话建立率 绝对值 lt95%
+                  - cell "1级-紧急" [ref=e216]:
+                    - generic [ref=e217]: 1级-紧急
+                  - cell "3点" [ref=e218]
+                  - cell "启用" [ref=e219]:
+                    - generic [ref=e220]: 启用
+                  - cell "2026-04-15 16:20:00" [ref=e222]
+                  - cell "编辑 删除" [ref=e223]:
+                    - button "编辑" [ref=e224] [cursor=pointer]:
+                      - generic [ref=e225]: 编辑
+                    - separator [ref=e226]
+                    - button "删除" [ref=e227] [cursor=pointer]:
+                      - generic [ref=e228]: 删除
+                - row "AMF切换成功率下降检测 AMF 业务受损监控 切换成功率 同比 lt-15% 3级-一般 5点 停用 2026-04-14 11:30:00 编辑 删除" [ref=e229]:
+                  - cell [ref=e230]:
+                    - checkbox [ref=e233] [cursor=pointer]
+                  - cell "AMF切换成功率下降检测" [ref=e235]
+                  - cell "AMF" [ref=e236]
+                  - cell "业务受损监控" [ref=e237]:
+                    - generic [ref=e238]: 业务受损监控
+                  - cell "切换成功率 同比 lt-15%" [ref=e239]:
+                    - generic [ref=e240]: 切换成功率 同比 lt-15%
+                  - cell "3级-一般" [ref=e241]:
+                    - generic [ref=e242]: 3级-一般
+                  - cell "5点" [ref=e243]
+                  - cell "停用" [ref=e244]:
+                    - generic [ref=e245]: 停用
+                  - cell "2026-04-14 11:30:00" [ref=e247]
+                  - cell "编辑 删除" [ref=e248]:
+                    - button "编辑" [ref=e249] [cursor=pointer]:
+                      - generic [ref=e250]: 编辑
+                    - separator [ref=e251]
+                    - button "删除" [ref=e252] [cursor=pointer]:
+                      - generic [ref=e253]: 删除
+                - row "SMF N2接口异常检测 SMF 故障派单 业务受损监控 动网自动化 N2接口延迟 绝对值 gt500 AND会话建立率 绝对值 lt90% 1级-紧急 3点 启用 2026-04-16 10:00:00 编辑 删除" [ref=e254]:
+                  - cell [ref=e255]:
+                    - checkbox [ref=e258] [cursor=pointer]
+                  - cell "SMF N2接口异常检测" [ref=e260]
+                  - cell "SMF" [ref=e261]
+                  - cell "故障派单 业务受损监控 动网自动化" [ref=e262]:
+                    - generic [ref=e263]: 故障派单
+                    - generic [ref=e264]: 业务受损监控
+                    - generic [ref=e265]: 动网自动化
+                  - cell "N2接口延迟 绝对值 gt500 AND会话建立率 绝对值 lt90%" [ref=e266]:
+                    - generic [ref=e267]: N2接口延迟 绝对值 gt500 AND
+                    - generic [ref=e268]: 会话建立率 绝对值 lt90%
+                  - cell "1级-紧急" [ref=e269]:
+                    - generic [ref=e270]: 1级-紧急
+                  - cell "3点" [ref=e271]
+                  - cell "启用" [ref=e272]:
+                    - generic [ref=e273]: 启用
+                  - cell "2026-04-16 10:00:00" [ref=e275]
+                  - cell "编辑 删除" [ref=e276]:
+                    - button "编辑" [ref=e277] [cursor=pointer]:
+                      - generic [ref=e278]: 编辑
+                    - separator [ref=e279]
+                    - button "删除" [ref=e280] [cursor=pointer]:
+                      - generic [ref=e281]: 删除
+                - row "UPF吞吐量异常监控 UPF 业务受损监控 动网自动化 吞吐量 环比 lt-30 2级-严重 5点 启用 2026-04-15 09:30:00 编辑 删除" [ref=e282]:
+                  - cell [ref=e283]:
+                    - checkbox [ref=e286] [cursor=pointer]
+                  - cell "UPF吞吐量异常监控" [ref=e288]
+                  - cell "UPF" [ref=e289]
+                  - cell "业务受损监控 动网自动化" [ref=e290]:
+                    - generic [ref=e291]: 业务受损监控
+                    - generic [ref=e292]: 动网自动化
+                  - cell "吞吐量 环比 lt-30" [ref=e293]:
+                    - generic [ref=e294]: 吞吐量 环比 lt-30
+                  - cell "2级-严重" [ref=e295]:
+                    - generic [ref=e296]: 2级-严重
+                  - cell "5点" [ref=e297]
+                  - cell "启用" [ref=e298]:
+                    - generic [ref=e299]: 启用
+                  - cell "2026-04-15 09:30:00" [ref=e301]
+                  - cell "编辑 删除" [ref=e302]:
+                    - button "编辑" [ref=e303] [cursor=pointer]:
+                      - generic [ref=e304]: 编辑
+                    - separator [ref=e305]
+                    - button "删除" [ref=e306] [cursor=pointer]:
+                      - generic [ref=e307]: 删除
+                - row "MME附着成功率监控 MME 故障派单 附着成功率 绝对值 lt97% 2级-严重 3点 启用 2026-04-16 08:00:00 编辑 删除" [ref=e308]:
+                  - cell [ref=e309]:
+                    - checkbox [ref=e312] [cursor=pointer]
+                  - cell "MME附着成功率监控" [ref=e314]
+                  - cell "MME" [ref=e315]
+                  - cell "故障派单" [ref=e316]:
+                    - generic [ref=e317]: 故障派单
+                  - cell "附着成功率 绝对值 lt97%" [ref=e318]:
+                    - generic [ref=e319]: 附着成功率 绝对值 lt97%
+                  - cell "2级-严重" [ref=e320]:
+                    - generic [ref=e321]: 2级-严重
+                  - cell "3点" [ref=e322]
+                  - cell "启用" [ref=e323]:
+                    - generic [ref=e324]: 启用
+                  - cell "2026-04-16 08:00:00" [ref=e326]
+                  - cell "编辑 删除" [ref=e327]:
+                    - button "编辑" [ref=e328] [cursor=pointer]:
+                      - generic [ref=e329]: 编辑
+                    - separator [ref=e330]
+                    - button "删除" [ref=e331] [cursor=pointer]:
+                      - generic [ref=e332]: 删除
+                - row "SMF会话建立率联合检测 SMF 动网自动化 会话建立率 绝对值 lt95% ORN2接口延迟 绝对值 gt300 1级-紧急 2点 启用 2026-04-16 11:00:00 编辑 删除" [ref=e333]:
+                  - cell [ref=e334]:
+                    - checkbox [ref=e337] [cursor=pointer]
+                  - cell "SMF会话建立率联合检测" [ref=e339]
+                  - cell "SMF" [ref=e340]
+                  - cell "动网自动化" [ref=e341]:
+                    - generic [ref=e342]: 动网自动化
+                  - cell "会话建立率 绝对值 lt95% ORN2接口延迟 绝对值 gt300" [ref=e343]:
+                    - generic [ref=e344]: 会话建立率 绝对值 lt95% OR
+                    - generic [ref=e345]: N2接口延迟 绝对值 gt300
+                  - cell "1级-紧急" [ref=e346]:
+                    - generic [ref=e347]: 1级-紧急
+                  - cell "2点" [ref=e348]
+                  - cell "启用" [ref=e349]:
+                    - generic [ref=e350]: 启用
+                  - cell "2026-04-16 11:00:00" [ref=e352]
+                  - cell "编辑 删除" [ref=e353]:
+                    - button "编辑" [ref=e354] [cursor=pointer]:
+                      - generic [ref=e355]: 编辑
+                    - separator [ref=e356]
+                    - button "删除" [ref=e357] [cursor=pointer]:
+                      - generic [ref=e358]: 删除
+                - row "UPF会话建立率低告警 UPF 故障派单 动网自动化 会话建立率 绝对值 lt95% 1级-紧急 3点 启用 2026-04-16 09:00:00 编辑 删除" [ref=e359]:
+                  - cell [ref=e360]:
+                    - checkbox [ref=e363] [cursor=pointer]
+                  - cell "UPF会话建立率低告警" [ref=e365]
+                  - cell "UPF" [ref=e366]
+                  - cell "故障派单 动网自动化" [ref=e367]:
+                    - generic [ref=e368]: 故障派单
+                    - generic [ref=e369]: 动网自动化
+                  - cell "会话建立率 绝对值 lt95%" [ref=e370]:
+                    - generic [ref=e371]: 会话建立率 绝对值 lt95%
+                  - cell "1级-紧急" [ref=e372]:
+                    - generic [ref=e373]: 1级-紧急
+                  - cell "3点" [ref=e374]
+                  - cell "启用" [ref=e375]:
+                    - generic [ref=e376]: 启用
+                  - cell "2026-04-16 09:00:00" [ref=e378]
+                  - cell "编辑 删除" [ref=e379]:
+                    - button "编辑" [ref=e380] [cursor=pointer]:
+                      - generic [ref=e381]: 编辑
+                    - separator [ref=e382]
+                    - button "删除" [ref=e383] [cursor=pointer]:
+                      - generic [ref=e384]: 删除
+                - row "HSS鉴权成功率监控 HSS 业务受损监控 鉴权成功率 绝对值 lt98% 3级-一般 5点 停用 2026-04-16 10:00:00 编辑 删除" [ref=e385]:
+                  - cell [ref=e386]:
+                    - checkbox [ref=e389] [cursor=pointer]
+                  - cell "HSS鉴权成功率监控" [ref=e391]
+                  - cell "HSS" [ref=e392]
+                  - cell "业务受损监控" [ref=e393]:
+                    - generic [ref=e394]: 业务受损监控
+                  - cell "鉴权成功率 绝对值 lt98%" [ref=e395]:
+                    - generic [ref=e396]: 鉴权成功率 绝对值 lt98%
+                  - cell "3级-一般" [ref=e397]:
+                    - generic [ref=e398]: 3级-一般
+                  - cell "5点" [ref=e399]
+                  - cell "停用" [ref=e400]:
+                    - generic [ref=e401]: 停用
+                  - cell "2026-04-16 10:00:00" [ref=e403]
+                  - cell "编辑 删除" [ref=e404]:
+                    - button "编辑" [ref=e405] [cursor=pointer]:
+                      - generic [ref=e406]: 编辑
+                    - separator [ref=e407]
+                    - button "删除" [ref=e408] [cursor=pointer]:
+                      - generic [ref=e409]: 删除
+                - row "UDM注册率异常检测 UDM 故障派单 业务受损监控 动网自动化 注册成功率 环比 lt-15% 2级-严重 3点 启用 2026-04-16 11:00:00 编辑 删除" [ref=e410]:
+                  - cell [ref=e411]:
+                    - checkbox [ref=e414] [cursor=pointer]
+                  - cell "UDM注册率异常检测" [ref=e416]
+                  - cell "UDM" [ref=e417]
+                  - cell "故障派单 业务受损监控 动网自动化" [ref=e418]:
+                    - generic [ref=e419]: 故障派单
+                    - generic [ref=e420]: 业务受损监控
+                    - generic [ref=e421]: 动网自动化
+                  - cell "注册成功率 环比 lt-15%" [ref=e422]:
+                    - generic [ref=e423]: 注册成功率 环比 lt-15%
+                  - cell "2级-严重" [ref=e424]:
+                    - generic [ref=e425]: 2级-严重
+                  - cell "3点" [ref=e426]
+                  - cell "启用" [ref=e427]:
+                    - generic [ref=e428]: 启用
+                  - cell "2026-04-16 11:00:00" [ref=e430]
+                  - cell "编辑 删除" [ref=e431]:
+                    - button "编辑" [ref=e432] [cursor=pointer]:
+                      - generic [ref=e433]: 编辑
+                    - separator [ref=e434]
+                    - button "删除" [ref=e435] [cursor=pointer]:
+                      - generic [ref=e436]: 删除
+            - list [ref=e437]:
+              - listitem [ref=e438]: 共 10 条
+              - listitem "上一页" [ref=e439]:
+                - button "left" [disabled] [ref=e440]:
+                  - img "left" [ref=e441]:
+                    - img [ref=e442]
+              - listitem "1" [ref=e444] [cursor=pointer]:
+                - generic [ref=e445]: "1"
+              - listitem "下一页" [ref=e446]:
+                - button "right" [disabled] [ref=e447]:
+                  - img "right" [ref=e448]:
+                    - img [ref=e449]
+              - listitem [ref=e451]:
+                - generic [ref=e452] [cursor=pointer]:
+                  - generic [ref=e453]:
+                    - combobox [ref=e455]
+                    - generic [ref=e456]: 20 条/页
+                  - generic:
+                    - img:
+                      - img
+  - generic [ref=e458]:
+    - img "check-circle" [ref=e459]:
+      - img [ref=e460]
+    - text: 登录成功

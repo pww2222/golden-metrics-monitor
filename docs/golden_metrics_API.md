@@ -1,8 +1,8 @@
 # 核心网黄金指标分析系统 — API 接口文档
 
-> **版本**：v1.0  
-> **日期**：2026-04-16  
-> **配套文档**：golden_metrics_PRD.md v1.0、golden_metrics_prototype.md v2.0  
+> **版本**：v1.1  
+> **日期**：2026-04-22  
+> **配套文档**：golden_metrics_PRD.md v1.1、golden_metrics_prototype.md v2.1  
 > **Base URL**：`/api/v1`
 
 ---
@@ -65,6 +65,10 @@ Authorization: Bearer <jwt_token>
 | 10008 | 告警事件不存在 (EVENT_NOT_FOUND) |
 | 10009 | 模板不存在 (TEMPLATE_NOT_FOUND) |
 | 10010 | 导出任务不存在 (EXPORT_TASK_NOT_FOUND) |
+| 10011 | 聚合规则名称重复 (AGG_RULE_NAME_DUPLICATE) |
+| 10012 | 聚合规则不存在 (AGG_RULE_NOT_FOUND) |
+| 10013 | 衍生告警不存在 (DERIVED_ALARM_NOT_FOUND) |
+| 10014 | 衍生告警不支持人工操作 (DERIVED_ALARM_NO_ACTION) |
 
 ### 分页约定
 
@@ -707,6 +711,654 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+## 三-B、聚合规则模块
+
+### 3B.1 查询聚合规则列表
+
+**GET** `/agg-rules`
+
+| 权限 | rule:list |
+|------|------|
+
+**请求参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| ne_type | string | 否 | 网元类型筛选 |
+| status | int | 否 | 规则状态：0停用/1启用 |
+| rule_name | string | 否 | 规则名称模糊搜索 |
+| page | int | 否 | 页码，默认1 |
+| page_size | int | 否 | 每页条数，默认20 |
+| sort_by | string | 否 | 排序字段，默认 created_at |
+| sort_order | string | 否 | asc/desc，默认 desc |
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "total": 12,
+    "page": 1,
+    "page_size": 20,
+    "list": [
+      {
+        "rule_id": 5001,
+        "rule_name": "AMF注册态用户数聚合",
+        "agg_type": "pool",
+        "ne_type": "AMF",
+        "metric_code": "registered_users",
+        "metric_name": "注册态用户数",
+        "agg_function": "sum",
+        "baseline_type": "yesterday_same_period",
+        "operator": "lt",
+        "threshold_value": -10.0,
+        "observe_window": 3,
+        "severity": 2,
+        "status": 1,
+        "province_code": null,
+        "created_by": "zhangsan",
+        "created_at": "2026-04-18 09:00:00",
+        "updated_at": "2026-04-20 14:30:00"
+      }
+    ]
+  }
+}
+```
+
+### 3B.2 获取聚合规则详情
+
+**GET** `/agg-rules/{rule_id}`
+
+| 权限 | rule:list |
+|------|------|
+
+**路径参数**：
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| rule_id | bigint | 聚合规则ID |
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "rule_id": 5001,
+    "rule_name": "AMF注册态用户数聚合",
+    "agg_type": "pool",
+    "ne_type": "AMF",
+    "metric_code": "registered_users",
+    "metric_name": "注册态用户数",
+    "agg_function": "sum",
+    "baseline_type": "yesterday_same_period",
+    "operator": "lt",
+    "threshold_value": -10.0,
+    "observe_window": 3,
+    "severity": 2,
+    "status": 1,
+    "province_code": null,
+    "created_by": "zhangsan",
+    "created_at": "2026-04-18 09:00:00",
+    "updated_at": "2026-04-20 14:30:00"
+  }
+}
+```
+
+### 3B.3 创建聚合规则
+
+**POST** `/agg-rules`
+
+| 权限 | rule:create |
+|------|------|
+
+**请求体**：
+
+```json
+{
+  "rule_name": "AMF注册态用户数聚合",
+  "ne_type": "AMF",
+  "metric_code": "registered_users",
+  "metric_name": "注册态用户数",
+  "agg_function": "sum",
+  "baseline_type": "yesterday_same_period",
+  "operator": "lt",
+  "threshold_value": -10.0,
+  "observe_window": 3,
+  "severity": 2,
+  "status": 1
+}
+```
+
+**字段校验规则**：
+
+| 字段 | 必填 | 校验规则 |
+|------|------|----------|
+| rule_name | 是 | 2-50字，同类网元内唯一 |
+| ne_type | 是 | 20种网元类型枚举值 |
+| metric_code | 是 | 有效指标编码 |
+| metric_name | 是 | 指标名称 |
+| agg_function | 是 | sum/avg/max/min |
+| baseline_type | 是 | yesterday_same_period/previous_normal_cycle/absolute |
+| operator | 是 | lt/lte/gt/gte/eq/ne |
+| threshold_value | 是 | 数值型0~999999，百分比0~100 |
+| observe_window | 是 | 1-30整数 |
+| severity | 是 | 1-4整数 |
+| status | 否 | 0/1，默认1 |
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "rule_id": 5001,
+    "rule_name": "AMF注册态用户数聚合"
+  }
+}
+```
+
+**错误响应**：
+
+```json
+{
+  "code": 10011,
+  "message": "聚合规则名称已存在，请修改",
+  "data": null
+}
+```
+
+### 3B.4 更新聚合规则
+
+**PUT** `/agg-rules/{rule_id}`
+
+| 权限 | rule:edit |
+|------|------|
+
+**路径参数**：
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| rule_id | bigint | 聚合规则ID |
+
+**请求体**：同创建聚合规则，所有字段均可修改
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "rule_id": 5001,
+    "affected_derived_alarms": 2,
+    "message": "此修改将影响2条正在生效的衍生告警"
+  }
+}
+```
+
+### 3B.5 删除聚合规则
+
+**DELETE** `/agg-rules/{rule_id}`
+
+| 权限 | rule:delete |
+|------|------|
+
+**路径参数**：
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| rule_id | bigint | 聚合规则ID |
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}
+```
+
+**约束**：规则下有活跃衍生告警时不可删除，返回：
+
+```json
+{
+  "code": 400,
+  "message": "该规则下有2条活跃衍生告警，无法删除",
+  "data": { "active_derived_alarms": 2 }
+}
+```
+
+### 3B.6 批量启用/停用聚合规则
+
+**PUT** `/agg-rules/batch-status`
+
+| 权限 | rule:edit |
+|------|------|
+
+**请求体**：
+
+```json
+{
+  "rule_ids": [5001, 5002, 5003],
+  "status": 1
+}
+```
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| rule_ids | 是 | 规则ID数组，最多50个 |
+| status | 是 | 0停用/1启用 |
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "success_count": 3,
+    "fail_count": 0
+  }
+}
+```
+
+### 3B.7 检查聚合规则名称唯一性
+
+**GET** `/agg-rules/check-name`
+
+| 权限 | rule:list |
+|------|------|
+
+**请求参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| rule_name | string | 是 | 规则名称 |
+| ne_type | string | 是 | 网元类型 |
+| exclude_rule_id | bigint | 否 | 编辑时排除当前规则ID |
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "available": true
+  }
+}
+```
+
+---
+
+## 三-C、衍生告警模块
+
+### 3C.1 查询衍生告警列表
+
+**GET** `/derived-alarms`
+
+| 权限 | alarm:list |
+|------|------|
+
+**请求参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| agg_type | string | 否 | 聚合类型：region/pool |
+| region_code | string | 否 | 大区编码（集团用户可用） |
+| pool_name | string | 否 | Pool名称 |
+| ne_type | string | 否 | 网元类型 |
+| severity | string | 否 | 告警等级：1/2/3/4，逗号分隔多选 |
+| status | string | 否 | 衍生告警状态：active/clearing/cleared，逗号分隔 |
+| start_time | datetime | 否 | 更新时间起始 |
+| end_time | datetime | 否 | 更新时间结束 |
+| page | int | 否 | 页码，默认1 |
+| page_size | int | 否 | 每页条数，默认20 |
+| sort_by | string | 否 | 排序字段，默认 updated_at |
+| sort_order | string | 否 | asc/desc，默认 desc |
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "total": 6,
+    "page": 1,
+    "page_size": 20,
+    "list": [
+      {
+        "derived_id": 30001,
+        "agg_rule_id": 5001,
+        "agg_type": "region",
+        "group_key": "HN",
+        "group_name": "华南大区",
+        "ne_type": "AMF",
+        "metric_code": "registration_rate",
+        "event_title": "华南大区AMF注册成功率异常",
+        "severity": 1,
+        "status": "active",
+        "child_count": 3,
+        "active_child_count": 2,
+        "started_at": "2026-04-16 10:25:00",
+        "updated_at": "2026-04-16 10:28:00",
+        "cleared_at": null
+      },
+      {
+        "derived_id": 30002,
+        "agg_rule_id": 5001,
+        "agg_type": "pool",
+        "group_key": "Pool-GD-AMF-01",
+        "group_name": "Pool-GD-AMF-01",
+        "ne_type": "AMF",
+        "metric_code": "registered_users",
+        "event_title": "Pool-GD-AMF-01 AMF注册态用户数下降",
+        "severity": 1,
+        "status": "active",
+        "child_count": 2,
+        "active_child_count": 2,
+        "agg_value": 128450.0,
+        "baseline_value": 145200.0,
+        "started_at": "2026-04-16 10:23:00",
+        "updated_at": "2026-04-16 10:26:00",
+        "cleared_at": null
+      }
+    ]
+  }
+}
+```
+
+### 3C.2 获取衍生告警详情
+
+**GET** `/derived-alarms/{derived_id}`
+
+| 权限 | alarm:list |
+|------|------|
+
+**路径参数**：
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| derived_id | bigint | 衍生告警ID |
+
+**响应体（大区级）**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "derived_id": 30001,
+    "agg_rule_id": 0,
+    "agg_type": "region",
+    "group_key": "HN",
+    "group_name": "华南大区",
+    "ne_type": "AMF",
+    "metric_code": "registration_rate",
+    "metric_name": "注册成功率",
+    "event_title": "华南大区AMF注册成功率异常",
+    "event_detail": "华南大区2个省份（广东、广西）出现AMF注册成功率异常",
+    "severity": 1,
+    "status": "active",
+    "child_count": 3,
+    "active_child_count": 2,
+    "started_at": "2026-04-16 10:25:00",
+    "updated_at": "2026-04-16 10:28:00",
+    "cleared_at": null,
+    "trigger_config": {
+      "min_provinces": 2,
+      "time_window_minutes": 30
+    },
+    "involved_provinces": [
+      { "province_code": "GD", "province_name": "广东", "child_count": 2 },
+      { "province_code": "GX", "province_name": "广西", "child_count": 1 }
+    ],
+    "children": [
+      {
+        "id": 1,
+        "event_id": 20001,
+        "province_code": "GD",
+        "province_name": "广东",
+        "ne_id": "NE-AMF-GD-002",
+        "ne_name": "AMF-GD-02",
+        "severity": 2,
+        "child_status": "active",
+        "event_title": "注册率下降",
+        "joined_at": "2026-04-16 10:25:00",
+        "cleared_at": null
+      },
+      {
+        "id": 2,
+        "event_id": 20010,
+        "province_code": "GX",
+        "province_name": "广西",
+        "ne_id": "NE-AMF-GX-001",
+        "ne_name": "AMF-GX-01",
+        "severity": 3,
+        "child_status": "active",
+        "event_title": "注册率波动",
+        "joined_at": "2026-04-16 10:28:00",
+        "cleared_at": null
+      },
+      {
+        "id": 3,
+        "event_id": 20000,
+        "province_code": "GD",
+        "province_name": "广东",
+        "ne_id": "NE-AMF-GD-001",
+        "ne_name": "AMF-GD-01",
+        "severity": 1,
+        "child_status": "cleared",
+        "event_title": "注册率异常",
+        "joined_at": "2026-04-16 10:23:00",
+        "cleared_at": "2026-04-16 10:35:00"
+      }
+    ],
+    "severity_history": [
+      { "time": "2026-04-16 10:23:00", "severity": 1, "reason": "初始生成，1省1条1级告警" },
+      { "time": "2026-04-16 10:25:00", "severity": 1, "reason": "新子告警追加(广东AMF-GD-02)，等级不变" },
+      { "time": "2026-04-16 10:28:00", "severity": 1, "reason": "新子告警追加(广西AMF-GX-01)，等级不变" }
+    ],
+    "no_manual_action": true
+  }
+}
+```
+
+**响应体（Pool级）差异字段**：
+
+```json
+{
+  "agg_rule_id": 5001,
+  "agg_type": "pool",
+  "group_key": "Pool-GD-AMF-01",
+  "group_name": "Pool-GD-AMF-01",
+  "agg_value": 128450.0,
+  "baseline_value": 145200.0,
+  "trigger_config": {
+    "rule_name": "AMF注册态用户数聚合",
+    "agg_function": "sum",
+    "baseline_type": "yesterday_same_period",
+    "operator": "lt",
+    "threshold_value": -10.0,
+    "offset_percent": -11.5,
+    "observe_window": 3
+  }
+}
+```
+
+### 3C.3 查询聚合视图（监控页专用）
+
+**GET** `/derived-alarms/aggregate-view`
+
+| 权限 | alarm:list |
+|------|------|
+
+**请求参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| view_mode | string | 是 | list/aggregate |
+| agg_dimension | string | 否 | region/pool/region_pool（view_mode=aggregate时必填） |
+| severity | string | 否 | 告警等级筛选 |
+| status | string | 否 | 衍生告警状态筛选 |
+| start_time | datetime | 否 | 更新时间起始 |
+| end_time | datetime | 否 | 更新时间结束 |
+| page | int | 否 | 页码 |
+| page_size | int | 否 | 每页条数 |
+
+**响应体（聚合视图，view_mode=aggregate, agg_dimension=region_pool）**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "total_regions": 3,
+    "total_derived_alarms": 6,
+    "regions": [
+      {
+        "region_code": "HN",
+        "region_name": "华南大区",
+        "alarm_count": 8,
+        "max_severity": 1,
+        "latest_time": "2026-04-16 10:28:00",
+        "derived_alarms": [
+          {
+            "derived_id": 30001,
+            "agg_type": "region",
+            "event_title": "华南大区AMF注册成功率异常",
+            "severity": 1,
+            "child_count": 3,
+            "active_child_count": 2,
+            "updated_at": "2026-04-16 10:28:00"
+          }
+        ],
+        "pools": [
+          {
+            "pool_name": "Pool-GD-AMF-01",
+            "alarm_count": 3,
+            "max_severity": 1,
+            "latest_time": "2026-04-16 10:23:00",
+            "derived_alarms": [
+              {
+                "derived_id": 30002,
+                "agg_type": "pool",
+                "event_title": "AMF注册态用户数下降",
+                "severity": 1,
+                "child_count": 2,
+                "active_child_count": 2,
+                "updated_at": "2026-04-16 10:23:00"
+              }
+            ],
+            "original_alarms": [
+              {
+                "event_id": 20001,
+                "ne_name": "AMF-GD-01",
+                "event_title": "注册率异常",
+                "severity": 1,
+                "updated_at": "2026-04-16 10:23:00"
+              },
+              {
+                "event_id": 20005,
+                "ne_name": "AMF-GD-03",
+                "event_title": "会话率波动",
+                "severity": 2,
+                "updated_at": "2026-04-16 10:26:00"
+              }
+            ]
+          },
+          {
+            "pool_name": "Pool-GD-AMF-02",
+            "alarm_count": 2,
+            "max_severity": 2,
+            "latest_time": "2026-04-16 10:25:00",
+            "derived_alarms": [],
+            "original_alarms": []
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 3C.4 获取大区级全局配置
+
+**GET** `/system-config/{config_key}`
+
+| 权限 | rule:list |
+|------|------|
+
+**路径参数**：
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| config_key | string | 配置键，如 region_agg_threshold |
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "config_key": "region_agg_threshold",
+    "config_value": {
+      "min_provinces": 2,
+      "time_window_minutes": 30
+    },
+    "description": "大区级聚合触发阈值：最少省份数 + 时间窗口",
+    "updated_at": "2026-04-16 09:00:00"
+  }
+}
+```
+
+### 3C.5 更新大区级全局配置
+
+**PUT** `/system-config/{config_key}`
+
+| 权限 | rule:edit（仅集团运维） |
+|------|------|
+
+**路径参数**：
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| config_key | string | 配置键 |
+
+**请求体**：
+
+```json
+{
+  "config_value": {
+    "min_provinces": 3,
+    "time_window_minutes": 20
+  }
+}
+```
+
+**响应体**：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "config_key": "region_agg_threshold",
+    "updated_at": "2026-04-22 10:00:00"
+  }
+}
+```
+
+---
+
 ## 四、效果模拟模块
 
 ### 4.1 规则效果模拟
@@ -1024,7 +1676,7 @@ Authorization: Bearer <jwt_token>
 | status | string | 否 | 事件状态，逗号分隔 |
 | start_time | datetime | 否 | 更新时间起始 |
 | end_time | datetime | 否 | 更新时间结束 |
-| group_by | string | 否 | 聚合模式：ne/pool，不传则为普通列表 |
+| group_by | string | 否 | 聚合模式：ne/pool/region/region_pool，不传则为普通列表 |
 | page | int | 否 | 页码 |
 | page_size | int | 否 | 每页条数 |
 | sort_by | string | 否 | 排序字段，默认 updated_at |
@@ -1789,6 +2441,10 @@ ws://<host>/api/v1/ws?token=<jwt_token>
 | `alarm.new` | 新告警事件 | 有新告警触发 | 事件摘要 |
 | `alarm.update` | 告警状态变更 | 告警确认/关闭/转派等 | 事件ID + 新状态 |
 | `alarm.recover` | 告警恢复 | 指标恢复正常 | 事件ID + 恢复时间 |
+| `derived_alarm.new` | 新衍生告警 | 大区级/Pool级衍生告警生成 | 衍生告警摘要 |
+| `derived_alarm.update` | 衍生告警更新 | 子告警追加/等级升级/状态变更 | 衍生告警ID + 变更类型 + 新状态 |
+| `derived_alarm.child_append` | 子告警追加 | 新告警追加到已有衍生告警 | 衍生告警ID + 子告警信息 |
+| `derived_alarm.clear` | 衍生告警清除 | 所有子告警已清除 | 衍生告警ID + 清除时间 |
 | `summary.refresh` | 摘要数据刷新 | 每30秒 | 告警摘要统计 |
 | `export.completed` | 导出完成 | 异步导出任务完成 | 任务ID + 下载链接 |
 | `system.status` | 系统状态 | 系统异常/恢复 | 状态信息 |
@@ -1816,6 +2472,18 @@ ws://<host>/api/v1/ws?token=<jwt_token>
 | `/rules/batch-status` | PUT | rule:edit | 批量启用/停用 |
 | `/rules/batch` | DELETE | rule:delete | 批量删除 |
 | `/rules/check-name` | GET | rule:list | 名称唯一性检查 |
+| `/agg-rules` | GET | rule:list | 聚合规则列表 |
+| `/agg-rules` | POST | rule:create | 创建聚合规则 |
+| `/agg-rules/{id}` | GET | rule:list | 聚合规则详情 |
+| `/agg-rules/{id}` | PUT | rule:edit | 更新聚合规则 |
+| `/agg-rules/{id}` | DELETE | rule:delete | 删除聚合规则 |
+| `/agg-rules/batch-status` | PUT | rule:edit | 批量启用/停用聚合规则 |
+| `/agg-rules/check-name` | GET | rule:list | 聚合规则名称唯一性检查 |
+| `/derived-alarms` | GET | alarm:list | 衍生告警列表 |
+| `/derived-alarms/{id}` | GET | alarm:list | 衍生告警详情 |
+| `/derived-alarms/aggregate-view` | GET | alarm:list | 聚合视图 |
+| `/system-config/{key}` | GET | rule:list | 获取全局配置 |
+| `/system-config/{key}` | PUT | rule:edit | 更新全局配置 |
 | `/rules/simulate` | POST | rule:list | 效果模拟 |
 | `/rules/{id}/simulate` | POST | rule:list | 已有规则模拟 |
 | `/templates` | GET | rule:list | 模板列表 |
@@ -1853,6 +2521,8 @@ ws://<host>/api/v1/ws?token=<jwt_token>
 |------|----------|
 | 认证 | 3 |
 | 规则配置 | 8 |
+| 聚合规则 | 7 |
+| 衍生告警 | 5 |
 | 规则模板 | 3 |
 | 效果模拟 | 2 |
 | 指标报表 | 3 |
@@ -1860,4 +2530,4 @@ ws://<host>/api/v1/ws?token=<jwt_token>
 | 数据导出 | 5 |
 | 公共数据 | 5 |
 | WebSocket | 1 |
-| **合计** | **40** |
+| **合计** | **52** |

@@ -3,6 +3,7 @@ import { mockRules, mockTemplates } from './data/rules';
 import { mockAlarms, mockAlarmDetail, generateSeveritySummary, mockAggregatedAlarms } from './data/alarms';
 import { mockMetricsSeries, mockMetricsTable, mockMetricsSummary, mockMetricsDistribution } from './data/metrics';
 import { mockFilterOptions, mockNeTypes, mockMetricsByType, mockNeSearchResults, mockOperators } from './data/common';
+import { mockAggRules, mockDerivedAlarms, mockDerivedAlarmDetail, mockAggregateView, mockSystemConfig } from './data/agg';
 
 // MSW 2.x requires absolute URLs for request matching.
 const BASE = `${window.location.origin}/api/v1`;
@@ -117,6 +118,11 @@ export const handlers = [
   http.get(`${BASE}/rules/check-name`, async () => {
     await delay(200);
     return HttpResponse.json({ code: 0, message: 'success', data: { available: true } });
+  }),
+
+  http.post(`${BASE}/rules/:id/copy`, async ({ params }) => {
+    await delay(500);
+    return HttpResponse.json({ code: 0, message: 'success', data: { rule_id: Date.now(), rule_name: '副本-规则', status: 0 } });
   }),
 
   http.post(`${BASE}/rules/simulate`, async () => {
@@ -317,6 +323,106 @@ export const handlers = [
       code: 0, message: 'success',
       data: { total: 1, page: 1, page_size: 10, list: [{ task_id: 'export_001', export_type: 'metric_report', status: 'completed', file_name: '黄金指标报表_20260416.xlsx', created_at: '2026-04-16 18:00:00' }] },
     });
+  }),
+
+  // Aggregation Rules
+  http.get(`${BASE}/agg-rules`, async ({ request }) => {
+    await delay(400);
+    const url = new URL(request.url);
+    const neType = url.searchParams.get('ne_type');
+    const status = url.searchParams.get('status');
+    const ruleName = url.searchParams.get('rule_name');
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const pageSize = parseInt(url.searchParams.get('page_size') || '20');
+    let filtered = [...mockAggRules];
+    if (neType) filtered = filtered.filter(r => r.ne_type === neType);
+    if (status !== null) filtered = filtered.filter(r => r.status === Number(status));
+    if (ruleName) filtered = filtered.filter(r => r.rule_name.includes(ruleName));
+    const total = filtered.length;
+    const list = filtered.slice((page - 1) * pageSize, page * pageSize);
+    return HttpResponse.json({ code: 0, message: 'success', data: { total, page, page_size: pageSize, list } });
+  }),
+
+  http.get(`${BASE}/agg-rules/check-name`, async () => {
+    await delay(200);
+    return HttpResponse.json({ code: 0, message: 'success', data: { available: true } });
+  }),
+
+  http.get(`${BASE}/agg-rules/:id`, async ({ params }) => {
+    await delay(300);
+    const rule = mockAggRules.find(r => r.rule_id === Number(params.id));
+    if (rule) return HttpResponse.json({ code: 0, message: 'success', data: rule });
+    return HttpResponse.json({ code: 10012, message: '聚合规则不存在', data: null });
+  }),
+
+  http.post(`${BASE}/agg-rules`, async ({ request }) => {
+    await delay(500);
+    const body = await request.json() as any;
+    const newRule = { ...body, rule_id: Date.now(), agg_type: 'pool', created_at: new Date().toISOString().slice(0, 19).replace('T', ' '), updated_at: new Date().toISOString().slice(0, 19).replace('T', ' ') };
+    return HttpResponse.json({ code: 0, message: 'success', data: { rule_id: newRule.rule_id, rule_name: newRule.rule_name } });
+  }),
+
+  http.put(`${BASE}/agg-rules/:id`, async ({ params }) => {
+    await delay(500);
+    return HttpResponse.json({ code: 0, message: 'success', data: { rule_id: Number(params.id), affected_derived_alarms: 2, message: '此修改将影响2条正在生效的衍生告警' } });
+  }),
+
+  http.delete(`${BASE}/agg-rules/:id`, async () => {
+    await delay(300);
+    return HttpResponse.json({ code: 0, message: 'success', data: null });
+  }),
+
+  http.put(`${BASE}/agg-rules/batch-status`, async () => {
+    await delay(400);
+    return HttpResponse.json({ code: 0, message: 'success', data: { success_count: 3, fail_count: 0 } });
+  }),
+
+  // Derived Alarms
+  http.get(`${BASE}/derived-alarms/aggregate-view`, async ({ request }) => {
+    await delay(500);
+    const url = new URL(request.url);
+    const viewMode = url.searchParams.get('view_mode');
+    const aggDimension = url.searchParams.get('agg_dimension');
+    if (viewMode === 'aggregate' && aggDimension) {
+      return HttpResponse.json({ code: 0, message: 'success', data: mockAggregateView });
+    }
+    return HttpResponse.json({ code: 0, message: 'success', data: { total: mockDerivedAlarms.length, list: mockDerivedAlarms } });
+  }),
+
+  http.get(`${BASE}/derived-alarms`, async ({ request }) => {
+    await delay(400);
+    const url = new URL(request.url);
+    const aggType = url.searchParams.get('agg_type');
+    const severity = url.searchParams.get('severity');
+    const status = url.searchParams.get('status');
+    let filtered = [...mockDerivedAlarms];
+    if (aggType) filtered = filtered.filter(d => d.agg_type === aggType);
+    if (severity) {
+      const levels = severity.split(',').map(Number);
+      filtered = filtered.filter(d => levels.includes(d.severity));
+    }
+    if (status) filtered = filtered.filter(d => status.split(',').includes(d.status));
+    return HttpResponse.json({ code: 0, message: 'success', data: { total: filtered.length, page: 1, page_size: 20, list: filtered } });
+  }),
+
+  http.get(`${BASE}/derived-alarms/:id`, async ({ params }) => {
+    await delay(400);
+    const detail = mockDerivedAlarmDetail(Number(params.id));
+    if (detail) return HttpResponse.json({ code: 0, message: 'success', data: detail });
+    return HttpResponse.json({ code: 10013, message: '衍生告警不存在', data: null });
+  }),
+
+  // System Config
+  http.get(`${BASE}/system-config/:key`, async ({ params }) => {
+    await delay(200);
+    const config = mockSystemConfig[params.key as string];
+    if (config) return HttpResponse.json({ code: 0, message: 'success', data: config });
+    return HttpResponse.json({ code: 400, message: '配置项不存在', data: null });
+  }),
+
+  http.put(`${BASE}/system-config/:key`, async ({ params }) => {
+    await delay(300);
+    return HttpResponse.json({ code: 0, message: 'success', data: { config_key: params.key, updated_at: new Date().toISOString().slice(0, 19).replace('T', ' ') } });
   }),
 
   // Common

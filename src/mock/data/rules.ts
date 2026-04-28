@@ -5,9 +5,11 @@ export const sceneOptions = [
   { value: 'auto_remediation', label: '动网自动化' },
 ] as const;
 
+export const vendorLabelMap: Record<string, string> = { huawei: '华为', zte: '中兴', ericsson: '爱立信' };
+
 export const mockRules = [
   {
-    rule_id: 1001, rule_name: 'AMF注册成功率异常监控', ne_type: 'AMF', severity: 2,
+    rule_id: 1001, rule_name: 'AMF注册成功率异常监控', ne_type: 'AMF', severity: 2, vendor: 'huawei',
     scene: ['fault_dispatch', 'biz_monitor'],
     conditions: [{ metric_code: 'registration_rate', metric_name: '注册成功率', metric_unit: 'percent', threshold_type: 'qoq', operator: 'lt', threshold_value: -20, offset_percent: -20 }],
     logic_operator: 'AND', observe_window: 3, recovery_window: 3,
@@ -18,7 +20,7 @@ export const mockRules = [
     created_by: 'zhangsan', created_at: '2026-04-10 14:30:00', updated_at: '2026-04-16 09:15:00',
   },
   {
-    rule_id: 1002, rule_name: 'AMF会话建立率监控', ne_type: 'AMF', severity: 1,
+    rule_id: 1002, rule_name: 'AMF会话建立率监控', ne_type: 'AMF', severity: 1, vendor: 'zte',
     scene: ['fault_dispatch'],
     conditions: [{ metric_code: 'session_setup_rate', metric_name: '会话建立率', metric_unit: 'percent', threshold_type: 'absolute', operator: 'lt', threshold_value: 95 }],
     logic_operator: 'AND', observe_window: 3, recovery_window: 5,
@@ -26,7 +28,7 @@ export const mockRules = [
     status: 1, sop_template: '1. 检查SMF连接\n2. 查看会话建立日志', created_by: 'zhangsan', created_at: '2026-04-11 10:00:00', updated_at: '2026-04-15 16:20:00',
   },
   {
-    rule_id: 1003, rule_name: 'AMF切换成功率下降检测', ne_type: 'AMF', severity: 3,
+    rule_id: 1003, rule_name: 'AMF切换成功率下降检测', ne_type: 'AMF', severity: 3, vendor: 'ericsson',
     scene: ['biz_monitor'],
     conditions: [{ metric_code: 'handover_rate', metric_name: '切换成功率', metric_unit: 'percent', threshold_type: 'yoy', operator: 'lt', threshold_value: -15, offset_percent: -15 }],
     logic_operator: 'AND', observe_window: 5, recovery_window: 3,
@@ -34,7 +36,7 @@ export const mockRules = [
     status: 0, sop_template: '', created_by: 'lisi', created_at: '2026-04-12 09:00:00', updated_at: '2026-04-14 11:30:00',
   },
   {
-    rule_id: 1004, rule_name: 'SMF N2接口异常检测', ne_type: 'SMF', severity: 1,
+    rule_id: 1004, rule_name: 'SMF N2接口异常检测', ne_type: 'SMF', severity: 1, vendor: 'huawei',
     scene: ['fault_dispatch', 'biz_monitor', 'auto_remediation'],
     conditions: [
       { metric_code: 'n2_interface_delay', metric_name: 'N2接口延迟', metric_unit: 'value', threshold_type: 'absolute', operator: 'gt', threshold_value: 500 },
@@ -45,7 +47,7 @@ export const mockRules = [
     status: 1, sop_template: '1. 检查N2接口状态\n2. 查看SMF日志\n3. 联系华为支持', created_by: 'zhangsan', created_at: '2026-04-13 08:30:00', updated_at: '2026-04-16 10:00:00',
   },
   {
-    rule_id: 1005, rule_name: 'UPF吞吐量异常监控', ne_type: 'UPF', severity: 2,
+    rule_id: 1005, rule_name: 'UPF吞吐量异常监控', ne_type: 'UPF', severity: 2, vendor: 'zte',
     scene: ['biz_monitor', 'auto_remediation'],
     conditions: [{ metric_code: 'throughput', metric_name: '吞吐量', metric_unit: 'value', threshold_type: 'qoq', operator: 'lt', threshold_value: -30, offset_percent: -30 }],
     logic_operator: 'AND', observe_window: 5, recovery_window: 5,
@@ -53,7 +55,7 @@ export const mockRules = [
     status: 1, sop_template: '1. 检查UPF负载\n2. 查看数据面日志', created_by: 'lisi', created_at: '2026-04-14 14:00:00', updated_at: '2026-04-15 09:30:00',
   },
   {
-    rule_id: 1006, rule_name: 'MME附着成功率监控', ne_type: 'MME', severity: 2,
+    rule_id: 1006, rule_name: 'MME附着成功率监控', ne_type: 'MME', severity: 2, vendor: 'ericsson',
     scene: ['fault_dispatch'],
     conditions: [{ metric_code: 'attach_rate', metric_name: '附着成功率', metric_unit: 'percent', threshold_type: 'absolute', operator: 'lt', threshold_value: 97 }],
     logic_operator: 'AND', observe_window: 3, recovery_window: 3,
@@ -61,7 +63,7 @@ export const mockRules = [
     status: 1, sop_template: '1. 检查MME进程\n2. 查看S1-MME接口', created_by: 'zhangsan', created_at: '2026-04-15 10:00:00', updated_at: '2026-04-16 08:00:00',
   },
   {
-    rule_id: 1007, rule_name: 'SMF会话建立率联合检测', ne_type: 'SMF', severity: 1,
+    rule_id: 1007, rule_name: 'SMF会话建立率联合检测', ne_type: 'SMF', severity: 1, vendor: 'huawei',
     scene: ['auto_remediation'],
     conditions: [
       { metric_code: 'session_setup_rate', metric_name: '会话建立率', metric_unit: 'percent', threshold_type: 'absolute', operator: 'lt', threshold_value: 95 },
@@ -72,7 +74,7 @@ export const mockRules = [
     status: 1, sop_template: '1. 检查SMF状态\n2. 查看N2接口\n3. 检查UPF连接', created_by: 'zhangsan', created_at: '2026-04-15 15:00:00', updated_at: '2026-04-16 11:00:00',
   },
   {
-    rule_id: 1008, rule_name: 'UPF会话建立率低告警', ne_type: 'UPF', severity: 1,
+    rule_id: 1008, rule_name: 'UPF会话建立率低告警', ne_type: 'UPF', severity: 1, vendor: 'zte',
     scene: ['fault_dispatch', 'auto_remediation'],
     conditions: [{ metric_code: 'session_setup_rate', metric_name: '会话建立率', metric_unit: 'percent', threshold_type: 'absolute', operator: 'lt', threshold_value: 95 }],
     logic_operator: 'AND', observe_window: 3, recovery_window: 3,
@@ -80,7 +82,7 @@ export const mockRules = [
     status: 1, sop_template: '1. 检查UPF进程状态\n2. 查看N4接口日志', created_by: 'lisi', created_at: '2026-04-16 08:00:00', updated_at: '2026-04-16 09:00:00',
   },
   {
-    rule_id: 1009, rule_name: 'HSS鉴权成功率监控', ne_type: 'HSS', severity: 3,
+    rule_id: 1009, rule_name: 'HSS鉴权成功率监控', ne_type: 'HSS', severity: 3, vendor: 'ericsson',
     scene: ['biz_monitor'],
     conditions: [{ metric_code: 'auth_rate', metric_name: '鉴权成功率', metric_unit: 'percent', threshold_type: 'absolute', operator: 'lt', threshold_value: 98 }],
     logic_operator: 'AND', observe_window: 5, recovery_window: 3,
@@ -88,7 +90,7 @@ export const mockRules = [
     status: 0, sop_template: '', created_by: 'zhangsan', created_at: '2026-04-16 09:00:00', updated_at: '2026-04-16 10:00:00',
   },
   {
-    rule_id: 1010, rule_name: 'UDM注册率异常检测', ne_type: 'UDM', severity: 2,
+    rule_id: 1010, rule_name: 'UDM注册率异常检测', ne_type: 'UDM', severity: 2, vendor: 'huawei',
     scene: ['fault_dispatch', 'biz_monitor', 'auto_remediation'],
     conditions: [{ metric_code: 'registration_rate', metric_name: '注册成功率', metric_unit: 'percent', threshold_type: 'qoq', operator: 'lt', threshold_value: -15, offset_percent: -15 }],
     logic_operator: 'AND', observe_window: 3, recovery_window: 3,

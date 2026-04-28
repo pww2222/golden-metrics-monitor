@@ -39,3 +39,7 @@ export function simulateRule(data: Record<string, any>) {
 export function simulateExistingRule(ruleId: number, data: Record<string, any>) {
   return request.post(`/rules/${ruleId}/simulate`, data);
 }
+
+export function copyRule(ruleId: number) {
+  return request.post(`/rules/${ruleId}/copy`);
+}

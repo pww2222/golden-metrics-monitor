@@ -42,10 +42,10 @@
           <a-col :span="6">
             <a-form-item label="告警等级">
               <a-select v-model:value="filterForm.severity" placeholder="全部" allowClear mode="multiple">
-                <a-select-option :value="1">🔴 1级-紧急</a-select-option>
-                <a-select-option :value="2">🟠 2级-严重</a-select-option>
-                <a-select-option :value="3">🟡 3级-一般</a-select-option>
-                <a-select-option :value="4">🔵 4级-提示</a-select-option>
+                <a-select-option :value="1">1级-紧急</a-select-option>
+                <a-select-option :value="2">2级-严重</a-select-option>
+                <a-select-option :value="3">3级-一般</a-select-option>
+                <a-select-option :value="4">4级-提示</a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
@@ -93,6 +93,14 @@
             <a-radio-button value="list">列表视图</a-radio-button>
             <a-radio-button value="aggregate">聚合视图</a-radio-button>
           </a-radio-group>
+          <!-- 聚合维度选择器 -->
+          <template v-if="viewMode === 'aggregate'">
+            <a-select v-model:value="aggDimension" style="margin-left: 12px; width: 140px" @change="loadAggregatedAlarms">
+              <a-select-option value="region_pool">大区+Pool</a-select-option>
+              <a-select-option value="region">仅大区</a-select-option>
+              <a-select-option value="pool">仅Pool</a-select-option>
+            </a-select>
+          </template>
           <template v-if="viewMode === 'list'">
             <a-button @click="batchConfirm" :disabled="!hasSelected" style="margin-left: 12px">批量确认</a-button>
             <a-button @click="openBatchTransfer" :disabled="!hasSelected" style="margin-left: 8px">批量转派</a-button>
@@ -100,7 +108,7 @@
           </template>
         </div>
         <div class="toolbar-right">
-          <a-button @click="handleExport">📥 导出</a-button>
+          <a-button @click="handleExport">导出</a-button>
         </div>
       </div>
 
@@ -138,54 +146,83 @@
         </template>
       </a-table>
 
-      <!-- 聚合视图 -->
-      <a-table
-        v-if="viewMode === 'aggregate'"
-        :columns="aggColumns"
-        :dataSource="aggregatedList"
-        :expandable="{ defaultExpandAllRows: false }"
-        rowKey="key"
-        :pagination="false"
-        :loading="aggLoading"
-        bordered
-        size="middle"
-        class="agg-table"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'ne_name'">
-            <span v-if="record.is_pool" class="pool-label">🔗 {{ record.ne_name }}</span>
-            <span v-else-if="record.event_id">{{ record.ne_name }}</span>
-            <span v-else>{{ record.ne_name }}</span>
+      <!-- 聚合视图：三层树形结构 -->
+      <div v-if="viewMode === 'aggregate'" class="aggregate-view">
+        <a-spin :spinning="aggLoading">
+          <template v-if="aggregateViewData">
+            <div class="agg-summary">
+              <span>共 {{ aggregateViewData.total_regions }} 个大区，{{ aggregateViewData.total_derived_alarms }} 条衍生告警</span>
+            </div>
+            <a-collapse v-model:activeKey="expandedRegions" :bordered="false" class="region-collapse">
+              <a-collapse-panel v-for="region in aggregateViewData.regions" :key="region.region_code">
+                <template #header>
+                  <div class="region-header">
+                    <span class="region-name">{{ region.region_name }}</span>
+                    <a-tag :color="severityColor(region.max_severity)" style="margin-left: 8px">{{ severityLabel(region.max_severity) }}</a-tag>
+                    <span class="region-count">{{ region.alarm_count }} 条告警</span>
+                    <span class="region-time">{{ region.latest_time?.slice(5, 16) }}</span>
+                  </div>
+                </template>
+
+                <!-- 大区级衍生告警 -->
+                <div v-if="region.derived_alarms?.length" class="derived-alarm-section">
+                  <div class="section-label">大区级衍生告警</div>
+                  <div v-for="da in region.derived_alarms" :key="da.derived_id" class="derived-alarm-item" @click="openDerivedDetail(da)">
+                    <span :class="'severity-badge-' + da.severity" class="severity-dot"></span>
+                    <a-tag color="purple" style="margin-right: 4px">大区</a-tag>
+                    <span class="da-title">{{ da.event_title }}</span>
+                    <span class="da-info">{{ da.child_count }}条子告警 / {{ da.active_child_count }}条活跃</span>
+                    <a-tag :color="severityColor(da.severity)">{{ severityLabel(da.severity) }}</a-tag>
+                  </div>
+                </div>
+
+                <!-- Pool 级 -->
+                <div v-if="region.pools?.length" class="pool-section">
+                  <div class="section-label">Pool级</div>
+                  <a-collapse v-model:activeKey="expandedPools[region.region_code]" :bordered="false" class="pool-collapse">
+                    <a-collapse-panel v-for="pool in region.pools" :key="pool.pool_name">
+                      <template #header>
+                        <div class="pool-header">
+                          <span class="pool-name">{{ pool.pool_name }}</span>
+                          <a-tag :color="severityColor(pool.max_severity)" style="margin-left: 8px">{{ severityLabel(pool.max_severity) }}</a-tag>
+                          <span class="pool-count">{{ pool.alarm_count }} 条</span>
+                        </div>
+                      </template>
+
+                      <!-- Pool级衍生告警 -->
+                      <div v-if="pool.derived_alarms?.length" class="derived-alarm-section">
+                        <div v-for="da in pool.derived_alarms" :key="da.derived_id" class="derived-alarm-item" @click="openDerivedDetail(da)">
+                          <span :class="'severity-badge-' + da.severity" class="severity-dot"></span>
+                          <a-tag color="blue" style="margin-right: 4px">Pool</a-tag>
+                          <span class="da-title">{{ da.event_title }}</span>
+                          <span class="da-info">{{ da.child_count }}条子告警 / {{ da.active_child_count }}条活跃</span>
+                          <a-tag :color="severityColor(da.severity)">{{ severityLabel(da.severity) }}</a-tag>
+                        </div>
+                      </div>
+
+                      <!-- 原始告警 -->
+                      <div v-if="pool.original_alarms?.length" class="original-alarm-section">
+                        <div class="section-label" style="margin-top: 8px">原始告警</div>
+                        <div v-for="oa in pool.original_alarms" :key="oa.event_id" class="original-alarm-item" @click="openDetail(oa)">
+                          <span :class="'severity-badge-' + oa.severity" class="severity-dot"></span>
+                          <span class="oa-name">{{ oa.ne_name }}</span>
+                          <span class="oa-title">{{ oa.event_title }}</span>
+                          <a-tag :color="severityColor(oa.severity)">{{ severityLabel(oa.severity) }}</a-tag>
+                        </div>
+                      </div>
+                    </a-collapse-panel>
+                  </a-collapse>
+                </div>
+              </a-collapse-panel>
+            </a-collapse>
+            <a-empty v-if="!aggregateViewData.regions?.length" description="暂无聚合数据" />
           </template>
-          <template v-if="column.key === 'event_title'">
-            <span v-if="record.event_title">{{ record.event_title }}</span>
-            <span v-else style="color: #bfbfbf">—</span>
-          </template>
-          <template v-if="column.key === 'alarm_count'">
-            <span v-if="record.alarm_count" class="alarm-count-badge">{{ record.alarm_count }}</span>
-            <span v-else style="color: #bfbfbf">—</span>
-          </template>
-          <template v-if="column.key === 'severity'">
-            <a-tag :color="severityColor(record.severity)">{{ severityLabel(record.severity) }}</a-tag>
-          </template>
-          <template v-if="column.key === 'status'">
-            <a-badge v-if="record.status" :status="statusBadge(record.status)" :text="statusLabel(record.status)" />
-            <span v-else style="color: #bfbfbf">—</span>
-          </template>
-          <template v-if="column.key === 'latest_time'">
-            <span v-if="record.latest_time">{{ record.latest_time?.slice(5, 16) }}</span>
-            <span v-else-if="record.updated_at">{{ record.updated_at?.slice(5, 16) }}</span>
-            <span v-else style="color: #bfbfbf">—</span>
-          </template>
-          <template v-if="column.key === 'action'">
-            <a-button v-if="record.event_id" type="link" size="small" @click="openDetail(record)">详情</a-button>
-            <span v-else style="color: #bfbfbf">—</span>
-          </template>
-        </template>
-      </a-table>
+          <a-empty v-else-if="!aggLoading" description="暂无聚合数据" />
+        </a-spin>
+      </div>
     </a-card>
 
-    <!-- Detail Drawer -->
+    <!-- Alarm Detail Drawer (原始告警) -->
     <a-drawer :open="detailVisible" :width="480" :title="'告警事件详情'" @close="detailVisible = false" :destroyOnClose="true">
       <template v-if="currentAlarm">
         <div class="detail-header">
@@ -250,6 +287,110 @@
       </template>
     </a-drawer>
 
+    <!-- Derived Alarm Detail Drawer (衍生告警) -->
+    <a-drawer :open="derivedDetailVisible" :width="520" :title="'衍生告警详情'" @close="derivedDetailVisible = false" :destroyOnClose="true">
+      <template v-if="currentDerived">
+        <div class="detail-header">
+          <span :class="'severity-badge-' + currentDerived.severity" class="severity-icon"></span>
+          <span :class="'severity-' + currentDerived.severity" style="font-weight: 600">{{ severityLabel(currentDerived.severity) }}</span>
+          <a-tag :color="currentDerived.agg_type === 'region' ? 'purple' : 'blue'" style="margin-left: 8px">
+            {{ currentDerived.agg_type === 'region' ? '大区级' : 'Pool级' }}
+          </a-tag>
+          <span style="margin-left: 8px">{{ currentDerived.event_title }}</span>
+        </div>
+
+        <a-descriptions :column="1" size="small" bordered style="margin-top: 16px">
+          <a-descriptions-item label="聚合类型">{{ currentDerived.agg_type === 'region' ? '大区级（告警层）' : 'Pool级（指标层）' }}</a-descriptions-item>
+          <a-descriptions-item label="分组">{{ currentDerived.group_name }}</a-descriptions-item>
+          <a-descriptions-item label="网元类型">{{ currentDerived.ne_type }}</a-descriptions-item>
+          <a-descriptions-item label="指标">{{ currentDerived.metric_name }}</a-descriptions-item>
+          <a-descriptions-item label="子告警数">{{ currentDerived.child_count }} (活跃 {{ currentDerived.active_child_count }})</a-descriptions-item>
+          <a-descriptions-item label="状态">
+            <a-badge :status="derivedStatusBadge(currentDerived.status)" :text="derivedStatusLabel(currentDerived.status)" />
+          </a-descriptions-item>
+          <a-descriptions-item label="开始时间">{{ currentDerived.started_at }}</a-descriptions-item>
+          <a-descriptions-item label="更新时间">{{ currentDerived.updated_at }}</a-descriptions-item>
+          <a-descriptions-item v-if="currentDerived.cleared_at" label="清除时间">{{ currentDerived.cleared_at }}</a-descriptions-item>
+        </a-descriptions>
+
+        <!-- Pool级特有：聚合值/基线值 -->
+        <template v-if="currentDerived.agg_type === 'pool' && currentDerived.agg_value != null">
+          <a-divider>聚合数据</a-divider>
+          <a-row :gutter="12">
+            <a-col :span="8">
+              <a-statistic title="当前聚合值" :value="currentDerived.agg_value" :precision="1" :value-style="{ color: '#ff4d4f' }" />
+            </a-col>
+            <a-col :span="8">
+              <a-statistic title="基线值" :value="currentDerived.baseline_value" :precision="1" />
+            </a-col>
+            <a-col :span="8">
+              <a-statistic title="偏移" :value="currentDerived.trigger_config?.offset_percent" :precision="1" suffix="%" :value-style="{ color: '#ff4d4f' }" />
+            </a-col>
+          </a-row>
+          <div v-if="currentDerived.trigger_config" style="margin-top: 12px; font-size: 13px; color: #8c8c8c">
+            规则: {{ currentDerived.trigger_config.rule_name }}
+            | 函数: {{ aggFuncLabel(currentDerived.trigger_config.agg_function) }}
+            | 基线: {{ baselineLabel(currentDerived.trigger_config.baseline_type) }}
+            | 阈值: {{ currentDerived.trigger_config.operator }}{{ currentDerived.trigger_config.threshold_value }}
+            | 窗口: {{ currentDerived.trigger_config.observe_window }}点
+          </div>
+        </template>
+
+        <!-- 大区级特有：触发配置 -->
+        <template v-if="currentDerived.agg_type === 'region' && currentDerived.trigger_config">
+          <a-divider>触发配置</a-divider>
+          <div style="font-size: 13px; color: #8c8c8c">
+            最少省份数: {{ currentDerived.trigger_config.min_provinces }}
+            | 时间窗口: {{ currentDerived.trigger_config.time_window_minutes }}分钟
+          </div>
+          <div v-if="currentDerived.involved_provinces?.length" style="margin-top: 8px">
+            <span style="font-size: 13px; color: #8c8c8c">涉及省份: </span>
+            <a-tag v-for="p in currentDerived.involved_provinces" :key="p.province_code" style="margin-bottom: 2px">
+              {{ p.province_name }} ({{ p.child_count }}条)
+            </a-tag>
+          </div>
+        </template>
+
+        <!-- 子告警列表 -->
+        <a-divider>子告警列表 ({{ currentDerived.children?.length || 0 }}条)</a-divider>
+        <a-table
+          v-if="currentDerived.children?.length"
+          :dataSource="currentDerived.children"
+          :columns="childColumns"
+          :pagination="false"
+          size="small"
+          bordered
+          rowKey="id"
+        >
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'severity'">
+              <a-tag :color="severityColor(record.severity)">{{ severityLabel(record.severity) }}</a-tag>
+            </template>
+            <template v-if="column.key === 'child_status'">
+              <a-badge :status="record.child_status === 'active' ? 'error' : 'success'" :text="record.child_status === 'active' ? '活跃' : '已清除'" />
+            </template>
+          </template>
+        </a-table>
+
+        <!-- 等级变化历史 -->
+        <a-divider v-if="currentDerived.severity_history?.length">等级变化历史</a-divider>
+        <a-timeline v-if="currentDerived.severity_history?.length">
+          <a-timeline-item v-for="(h, i) in currentDerived.severity_history" :key="i" :color="h.severity <= 2 ? 'red' : 'blue'">
+            <div style="font-size: 13px">
+              <span style="color: #8c8c8c">{{ h.time }}</span>
+              <a-tag :color="severityColor(h.severity)" style="margin-left: 8px">{{ severityLabel(h.severity) }}</a-tag>
+              <div>{{ h.reason }}</div>
+            </div>
+          </a-timeline-item>
+        </a-timeline>
+
+        <!-- 无人工操作提示 -->
+        <a-alert v-if="currentDerived.no_manual_action" type="info" show-icon style="margin-top: 16px">
+          <template #message>衍生告警不支持人工操作（确认/关闭/转派等），请对子告警进行操作</template>
+        </a-alert>
+      </template>
+    </a-drawer>
+
     <!-- Transfer Modal -->
     <a-modal v-model:open="transferVisible" title="转派告警" @ok="handleTransfer" :destroyOnClose="true">
       <a-form layout="vertical">
@@ -276,8 +417,8 @@ import {
   getAlarms, getAlarmDetail, confirmAlarm, markFalseAlarm,
   transferAlarm, escalateAlarm, closeAlarm,
   batchConfirmAlarms, batchTransferAlarms, batchFalseAlarm,
-  getAlarmsAggregated,
 } from '@/api/alarms';
+import { getDerivedAlarmsAggregateView, getDerivedAlarmDetail } from '@/api/derived-alarms';
 import { getFilterOptions, getOperators } from '@/api/common';
 import { createExport } from '@/api/export';
 
@@ -285,9 +426,12 @@ const router = useRouter();
 const loading = ref(false);
 const timeRange = ref('24h');
 const viewMode = ref<'list' | 'aggregate'>('list');
+const aggDimension = ref<'region' | 'pool' | 'region_pool'>('region_pool');
 const alarmList = ref<any[]>([]);
-const aggregatedList = ref<any[]>([]);
+const aggregateViewData = ref<any>(null);
 const aggLoading = ref(false);
+const expandedRegions = ref<string[]>([]);
+const expandedPools = ref<Record<string, string[]>>({});
 const selectedRowKeys = ref<number[]>([]);
 const severitySummary = ref<Record<string, number>>({});
 const detailVisible = ref(false);
@@ -300,6 +444,10 @@ const operators = ref<any[]>([]);
 const isBatchTransfer = ref(false);
 const detailChartRef = ref<HTMLElement>();
 let detailChart: echarts.ECharts | null = null;
+
+// 衍生告警详情
+const derivedDetailVisible = ref(false);
+const currentDerived = ref<any>(null);
 
 const provinces = ref<any[]>([]);
 const majors = ref<any[]>([]);
@@ -341,14 +489,13 @@ const columns = [
   { title: '操作', key: 'action', width: 80, fixed: 'right' },
 ];
 
-const aggColumns = [
-  { title: '网元/聚合', dataIndex: 'ne_name', key: 'ne_name', width: 180 },
-  { title: '告警标题', dataIndex: 'event_title', key: 'event_title', width: 220, ellipsis: true },
-  { title: '告警数', key: 'alarm_count', width: 80, align: 'center' as const },
-  { title: '等级', key: 'severity', width: 100 },
-  { title: '状态', key: 'status', width: 90 },
-  { title: '最新时间', key: 'latest_time', width: 130 },
-  { title: '操作', key: 'action', width: 80, fixed: 'right' as const },
+const childColumns = [
+  { title: '省份', dataIndex: 'province_name', key: 'province_name', width: 80 },
+  { title: '网元', dataIndex: 'ne_name', key: 'ne_name', width: 120 },
+  { title: '标题', dataIndex: 'event_title', key: 'event_title', ellipsis: true },
+  { title: '等级', key: 'severity', width: 90 },
+  { title: '状态', key: 'child_status', width: 80 },
+  { title: '加入时间', dataIndex: 'joined_at', key: 'joined_at', width: 130, customRender: ({ text }: any) => text?.slice(5, 16) },
 ];
 
 const hasSelected = ref(false);
@@ -358,6 +505,10 @@ function severityColor(s: number) { return ['', 'red', 'orange', 'gold', 'blue']
 function severityLabel(s: number) { return ['', '1级-紧急', '2级-严重', '3级-一般', '4级-提示'][s] || ''; }
 function statusBadge(s: string) { return { pending: 'error', confirmed: 'warning', processing: 'processing', resolved: 'success', closed: 'default', false_alarm: 'default' }[s] || 'default'; }
 function statusLabel(s: string) { return { pending: '待处理', confirmed: '已确认', processing: '处理中', resolved: '已恢复', closed: '已关闭', false_alarm: '误报' }[s] || s; }
+function derivedStatusBadge(s: string) { return { active: 'error', clearing: 'warning', cleared: 'success' }[s] || 'default'; }
+function derivedStatusLabel(s: string) { return { active: '活跃', clearing: '清除中', cleared: '已清除' }[s] || s; }
+function aggFuncLabel(f: string) { return { sum: '求和', avg: '均值', max: '最大', min: '最小' }[f] || f; }
+function baselineLabel(b: string) { return { yesterday_same_period: '昨日同期', previous_normal_cycle: '前一正常周期', absolute: '绝对阈值' }[b] || b; }
 function filterOperator(input: string, option: any) { return option.children?.[0]?.children?.toLowerCase().includes(input.toLowerCase()); }
 
 function getTimeParams() {
@@ -389,19 +540,18 @@ async function loadAggregatedAlarms() {
   try {
     const [startTime, endTime] = getTimeParams();
     const params: any = {
-      province_code: filterForm.province_code || undefined,
-      major: filterForm.major || undefined,
-      ne_type: filterForm.ne_type || undefined,
-      vendor: filterForm.vendor || undefined,
-      ne_name: filterForm.ne_name || undefined,
+      view_mode: 'aggregate',
+      agg_dimension: aggDimension.value,
       severity: filterForm.severity.length ? filterForm.severity.join(',') : undefined,
-      scene: filterForm.scene.length ? filterForm.scene.join(',') : undefined,
       start_time: startTime,
       end_time: endTime,
     };
-    const res: any = await getAlarmsAggregated(params);
-    aggregatedList.value = res.list || [];
-    severitySummary.value = res.severity_summary || {};
+    const res: any = await getDerivedAlarmsAggregateView(params);
+    aggregateViewData.value = res;
+    // 默认展开第一个大区
+    if (res?.regions?.length) {
+      expandedRegions.value = [res.regions[0].region_code];
+    }
   } catch {} finally {
     aggLoading.value = false;
   }
@@ -481,6 +631,14 @@ async function openDetail(record: any) {
   } catch {}
 }
 
+async function openDerivedDetail(da: any) {
+  try {
+    const res: any = await getDerivedAlarmDetail(da.derived_id);
+    currentDerived.value = res;
+    derivedDetailVisible.value = true;
+  } catch {}
+}
+
 function renderDetailChart() {
   if (!detailChartRef.value) return;
   detailChart?.dispose();
@@ -488,11 +646,10 @@ function renderDetailChart() {
   const alarm = currentAlarm.value;
   if (!alarm) return;
 
-  // Generate simulated trend data around the alarm event
   const triggerVal = alarm.trigger_value || 87.3;
   const thresholdVal = alarm.trigger_threshold || 95;
   const baseVal = alarm.rule?.conditions?.[0]?.threshold_type === 'qoq' ? 98.5 : 98;
-  const points = 60; // 60 minutes
+  const points = 60;
   const now = new Date(alarm.started_at || Date.now());
   const times: string[] = [];
   const values: number[] = [];
@@ -504,7 +661,6 @@ function renderDetailChart() {
     times.push(t.toISOString().slice(11, 16));
     let v: number;
     if (i >= 40 && i <= 50) {
-      // Alarm zone
       v = triggerVal + (Math.random() - 0.5) * 3;
       if (!inAlarm) { alarmZone.push([{ xAxis: i }]); inAlarm = true; }
     } else {
@@ -677,8 +833,172 @@ async function handleExport() {
 
   .table-toolbar {
     display: flex; justify-content: space-between; margin-bottom: 12px;
-    .toolbar-left { display: flex; }
+    .toolbar-left { display: flex; align-items: center; }
     .toolbar-right { display: flex; }
+  }
+
+  // 聚合视图样式
+  .aggregate-view {
+    .agg-summary {
+      font-size: 13px;
+      color: @disabled-color;
+      margin-bottom: 12px;
+    }
+
+    .region-collapse {
+      background: transparent;
+
+      :deep(.ant-collapse-item) {
+        margin-bottom: 8px;
+        border: 1px solid @border-color;
+        border-radius: @card-radius;
+        background: #fff;
+      }
+
+      :deep(.ant-collapse-header) {
+        padding: 10px 16px !important;
+      }
+
+      :deep(.ant-collapse-content) {
+        border-top: none;
+        border-radius: 0 0 @card-radius @card-radius;
+      }
+    }
+
+    .region-header {
+      display: flex;
+      align-items: center;
+
+      .region-name {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .region-count {
+        margin-left: 12px;
+        font-size: 12px;
+        color: @disabled-color;
+      }
+
+      .region-time {
+        margin-left: 8px;
+        font-size: 12px;
+        color: @disabled-color;
+      }
+    }
+
+    .pool-collapse {
+      background: transparent;
+
+      :deep(.ant-collapse-item) {
+        margin-bottom: 4px;
+        border: 1px solid @border-color;
+        border-radius: @card-radius;
+        background: #fafbfc;
+      }
+    }
+
+    .pool-header {
+      display: flex;
+      align-items: center;
+
+      .pool-name {
+        font-weight: 500;
+        color: @primary-color;
+        font-size: 13px;
+      }
+
+      .pool-count {
+        margin-left: 8px;
+        font-size: 12px;
+        color: @disabled-color;
+      }
+    }
+
+    .section-label {
+      font-size: 12px;
+      color: @disabled-color;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .derived-alarm-section {
+      margin-bottom: 12px;
+    }
+
+    .derived-alarm-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      margin-bottom: 4px;
+      background: #fff;
+      border: 1px solid @border-color;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      font-size: 13px;
+
+      &:hover {
+        border-color: @primary-color;
+        background: @hover-bg;
+      }
+
+      .severity-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-right: 8px;
+      }
+
+      .da-title {
+        flex: 1;
+        font-weight: 500;
+      }
+
+      .da-info {
+        margin-left: 8px;
+        font-size: 12px;
+        color: @disabled-color;
+        white-space: nowrap;
+      }
+    }
+
+    .original-alarm-section {
+      margin-top: 4px;
+    }
+
+    .original-alarm-item {
+      display: flex;
+      align-items: center;
+      padding: 4px 12px;
+      margin-bottom: 2px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 13px;
+
+      &:hover { background: @hover-bg; }
+
+      .severity-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-right: 6px;
+      }
+
+      .oa-name {
+        font-weight: 500;
+        margin-right: 8px;
+        min-width: 100px;
+      }
+
+      .oa-title {
+        flex: 1;
+        color: @text-color;
+      }
+    }
   }
 
   .detail-header {
@@ -708,41 +1028,6 @@ async function handleExport() {
 
   .detail-actions {
     display: flex; flex-wrap: wrap; gap: 8px;
-  }
-
-  .agg-table {
-    .pool-label {
-      font-weight: 600;
-      color: @primary-color;
-    }
-
-    .alarm-count-badge {
-      display: inline-block;
-      min-width: 22px;
-      height: 22px;
-      line-height: 22px;
-      text-align: center;
-      border-radius: 11px;
-      background: #fff1f0;
-      color: @alarm-1;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 0 6px;
-    }
-
-    :deep(.ant-table-expanded-row) {
-      background: #fafbfc;
-      td { padding: 6px 8px !important; }
-    }
-
-    :deep(.ant-table-row-level-1) {
-      background: #fafbfc;
-    }
-
-    :deep(.ant-table-row-level-2) {
-      background: #f5f7fa;
-      font-size: 13px;
-    }
   }
 }
 </style>

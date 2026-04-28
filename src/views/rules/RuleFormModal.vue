@@ -1,18 +1,18 @@
 <template>
   <a-modal
     :open="open"
-    :title="editData ? `编辑告警规则 - ${editData.rule_name}` : '创建告警规则'"
+    :title="viewMode ? `查看告警规则 - ${editData?.rule_name}` : editData ? `编辑告警规则 - ${editData.rule_name}` : '创建告警规则'"
     :width="860"
     :footer="null"
     @cancel="handleClose"
     :destroyOnClose="true"
   >
     <a-steps :current="currentStep" size="small" style="margin-bottom: 24px">
-      <a-step title="基本信息" />
-      <a-step title="告警条件" />
-      <a-step title="观察窗口" />
-      <a-step title="生效设置" />
+
+      <a-step v-for="(s, i) in ['基本信息', '告警条件', '观察窗口', '生效设置']" :key="i" :title="s" />
     </a-steps>
+
+    <div :class="{ 'view-mode': viewMode }">
 
     <!-- Step 1: Basic Info -->
     <div v-show="currentStep === 0">
@@ -48,8 +48,8 @@
         <a-row :gutter="16">
           <a-col :span="24">
             <a-form-item label="应用场景">
+              <a-tag v-if="form.scene?.includes('fault_dispatch')" color="red" style="margin-right: 8px; cursor: default">故障派单</a-tag>
               <a-checkbox-group v-model:value="form.scene">
-                <a-checkbox value="fault_dispatch">故障派单</a-checkbox>
                 <a-checkbox value="biz_monitor">业务受损监控</a-checkbox>
                 <a-checkbox value="auto_remediation">动网自动化</a-checkbox>
               </a-checkbox-group>
@@ -78,7 +78,7 @@
           >
             <div class="card-header">
               <span class="metric-name">📊 {{ cond.metric_name || '未选择指标' }}</span>
-              <span class="card-summary">{{ thresholdTypeMap[cond.threshold_type] || '' }} {{ cond.operator }}{{ cond.threshold_value }}{{ cond.metric_unit === 'percent' ? '%' : '' }}</span>
+              <span class="card-summary">{{ thresholdTypeMap[cond.threshold_type] || '' }} {{ operatorSymbolMap[cond.operator] || cond.operator }}{{ cond.threshold_value }}{{ cond.metric_unit === 'percent' ? '%' : '' }}</span>
               <close-outlined v-if="form.conditions.length > 1" class="card-close" @click.stop="removeCondition(idx)" />
             </div>
           </div>
@@ -113,8 +113,12 @@
               <a-form-item label="阈值类型" required>
                 <a-radio-group v-model:value="form.conditions[activeCondition].threshold_type">
                   <a-radio value="absolute">绝对值</a-radio>
-                  <a-radio value="qoq">环比</a-radio>
-                  <a-radio value="yoy">同比</a-radio>
+                  <a-tooltip title="较上个周期">
+                    <a-radio value="qoq">环比</a-radio>
+                  </a-tooltip>
+                  <a-tooltip title="较前一天同期">
+                    <a-radio value="yoy">同比</a-radio>
+                  </a-tooltip>
                 </a-radio-group>
               </a-form-item>
             </a-col>
@@ -127,8 +131,6 @@
                   <a-select-option value="lte">&lt;=</a-select-option>
                   <a-select-option value="gt">&gt;</a-select-option>
                   <a-select-option value="gte">&gt;=</a-select-option>
-                  <a-select-option value="eq">=</a-select-option>
-                  <a-select-option value="ne">!=</a-select-option>
                 </a-select>
               </a-form-item>
             </a-col>
@@ -139,10 +141,8 @@
             </a-col>
             <a-col :span="8">
               <a-form-item label="单位">
-                <a-radio-group v-model:value="form.conditions[activeCondition].metric_unit">
-                  <a-radio value="percent">%</a-radio>
-                  <a-radio value="value">数值</a-radio>
-                </a-radio-group>
+                <span style="line-height: 32px; color: #595959">{{ form.conditions[activeCondition].metric_unit === 'percent' ? '%' : '数值' }}</span>
+                <span style="line-height: 32px; color: #8c8c8c; font-size: 12px; margin-left: 8px">（跟随指标）</span>
               </a-form-item>
             </a-col>
           </a-row>
@@ -246,14 +246,20 @@
         </a-form-item>
       </a-form>
     </div>
-
-    <!-- Footer Buttons -->
+    </div>
     <div class="modal-footer">
-      <a-button v-if="currentStep > 0" @click="currentStep--">← 上一步</a-button>
+      <template v-if="viewMode">
+        <a-button :disabled="!canPrev" @click="navigatePrev">← 上一条</a-button>
+        <span v-if="currentIndex >= 0" style="color:#8c8c8c;font-size:12px">{{ currentIndex + 1 }} / {{ ruleList?.length }}</span>
+      </template>
+      <a-button v-if="!viewMode && currentStep > 0" @click="currentStep--">← 上一步</a-button>
       <div style="flex:1"></div>
-      <a-button @click="handleClose">取消</a-button>
-      <a-button v-if="currentStep < 3" type="primary" @click="nextStep">下一步 →</a-button>
-      <template v-if="currentStep === 3">
+      <a-button @click="handleClose">{{ viewMode ? '关闭' : '取消' }}</a-button>
+      <template v-if="viewMode">
+        <a-button :disabled="!canNext" @click="navigateNext">下一条 →</a-button>
+      </template>
+      <a-button v-if="!viewMode && currentStep < 3" type="primary" @click="nextStep">下一步 →</a-button>
+      <template v-if="!viewMode && currentStep === 3">
         <a-button @click="handleSimulate">效果模拟</a-button>
         <a-button type="primary" @click="handleSave">{{ editData ? '保存修改' : '保存' }}</a-button>
       </template>
@@ -363,8 +369,8 @@ import { getMetricsDistribution } from '@/api/metrics';
 import * as echarts from 'echarts';
 import dayjs from 'dayjs';
 
-const props = defineProps<{ open: boolean; editData?: any }>();
-const emit = defineEmits(['update:open', 'saved']);
+const props = defineProps<{ open: boolean; editData?: any; viewMode?: boolean; ruleList?: any[] }>();
+const emit = defineEmits(['update:open', 'saved', 'navigate']);
 
 const currentStep = ref(0);
 const neTypeList = ref<any[]>([]);
@@ -392,6 +398,7 @@ let distributionChart: echarts.ECharts | null = null;
 const distributionInfo = ref<any>(null);
 
 const thresholdTypeMap: Record<string, string> = { absolute: '绝对值', qoq: '环比', yoy: '同比' };
+const operatorSymbolMap: Record<string, string> = { lt: '<', lte: '≤', gt: '>', gte: '≥' };
 
 const defaultCondition = () => ({
   metric_code: '',
@@ -546,7 +553,7 @@ function removeCondition(idx: number) {
 }
 
 const logicPreview = computed(() => {
-  return form.conditions.map((c) => `(${c.metric_name || '?'} ${thresholdTypeMap[c.threshold_type] || ''}${c.operator}${c.threshold_value})`).join(` ${form.logic_operator} `);
+  return form.conditions.map((c) => `(${c.metric_name || '?'} ${thresholdTypeMap[c.threshold_type] || ''}${operatorSymbolMap[c.operator] || c.operator}${c.threshold_value})`).join(` ${form.logic_operator} `);
 });
 
 const recommendWindow = computed(() => {
@@ -653,9 +660,29 @@ function handleClose() {
   emit('update:open', false);
   resetForm();
 }
+
+const currentIndex = computed(() => {
+  if (!props.viewMode || !props.ruleList?.length || !props.editData) return -1;
+  return props.ruleList.findIndex((r: any) => r.rule_id === props.editData.rule_id);
+});
+const canPrev = computed(() => currentIndex.value > 0);
+const canNext = computed(() => currentIndex.value >= 0 && currentIndex.value < (props.ruleList?.length || 0) - 1);
+
+function navigatePrev() {
+  if (!canPrev.value) return;
+  emit('navigate', props.ruleList![currentIndex.value - 1]);
+}
+function navigateNext() {
+  if (!canNext.value) return;
+  emit('navigate', props.ruleList![currentIndex.value + 1]);
+}
 </script>
 
 <style lang="less" scoped>
+.view-mode {
+  pointer-events: none;
+  opacity: 0.85;
+}
 .condition-canvas {
   .condition-list {
     display: flex;
